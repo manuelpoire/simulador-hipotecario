@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#003C8A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AGENTO Hipotecas">
+<meta name="description" content="Simulador de crédito hipotecario de AGENTO Bienes Raíces. Calcula tu mensualidad, CAT y tabla de amortización.">
+<title>AGENTO · Simulador de Crédito Hipotecario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Archivo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --azul:#003C8A;
+  --azul-900:#002a63;
+  --azul-50:#eef3fb;
+  --azul-100:#dde8f6;
+  --tinta:#0d1b2a;
+  --gris:#5b6878;
+  --gris-suave:#8a96a6;
+  --linea:#e4e9f0;
+  --papel:#f6f8fc;
+  --blanco:#ffffff;
+  --verde:#0a7d52;
+  --ambar:#b5780b;
+  --rojo:#b32d2d;
+  --sombra:0 1px 3px rgba(13,27,42,.06),0 8px 24px rgba(13,27,42,.06);
+  --sombra-lg:0 4px 12px rgba(13,27,42,.08),0 24px 48px rgba(13,27,42,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Archivo',sans-serif;
+  background:
+    radial-gradient(1200px 600px at 100% -10%, rgba(0,60,138,.06), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(0,60,138,.05), transparent 55%),
+    var(--papel);
+  color:var(--tinta);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+
+/* ===== HEADER ===== */
+header.topbar{
+  background:rgba(255,255,255,.82);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--linea);
+  position:sticky;top:0;z-index:50;
+}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;height:74px;gap:16px}
+.brand{display:flex;align-items:center;gap:14px}
+.brand img{height:46px;width:auto;display:block}
+.brand-sep{width:1px;height:34px;background:var(--linea)}
+.brand-tag{font-family:'Fraunces',serif;font-size:14px;color:var(--gris);letter-spacing:.01em;max-width:200px;line-height:1.25}
+.topbar-cta{font-size:13px;color:var(--gris);font-weight:500}
+.topbar-cta b{color:var(--azul);font-weight:700}
+
+/* ===== HERO ===== */
+.hero{padding:46px 0 26px}
+.hero .kicker{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--azul);background:var(--azul-50);
+  padding:7px 14px;border-radius:100px;border:1px solid var(--azul-100);
+}
+.hero h1{
+  font-family:'Fraunces',serif;font-weight:600;
+  font-size:clamp(32px,5vw,52px);line-height:1.04;letter-spacing:-.02em;
+  margin:18px 0 12px;color:var(--tinta);max-width:760px;
+}
+.hero h1 em{font-style:italic;color:var(--azul)}
+.hero p.sub{font-size:17px;color:var(--gris);max-width:620px}
+
+/* ===== LAYOUT ===== */
+.grid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:28px;padding:14px 0 70px;align-items:start}
+@media(max-width:920px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+.card{
+  background:var(--blanco);border:1px solid var(--linea);border-radius:20px;
+  box-shadow:var(--sombra);overflow:hidden;
+}
+.card-head{padding:20px 24px;border-bottom:1px solid var(--linea);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.card-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:19px;letter-spacing:-.01em}
+.card-head .num{font-size:12px;font-weight:700;color:var(--azul);background:var(--azul-50);border-radius:8px;padding:4px 9px;border:1px solid var(--azul-100)}
+.card-body{padding:22px 24px}
+
+/* form panel sticky */
+.panel{position:sticky;top:96px}
+
+/* ===== FORM ===== */
+.field{margin-bottom:18px}
+.field:last-child{margin-bottom:0}
+label.lbl{display:flex;align-items:baseline;justify-content:space-between;font-size:13px;font-weight:600;color:var(--tinta);margin-bottom:7px}
+label.lbl .hint{font-size:11px;font-weight:500;color:var(--gris-suave)}
+.input-money{position:relative}
+.input-money .sign{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--gris-suave);font-weight:600;font-size:15px;pointer-events:none}
+input[type=text],input[type=number],select{
+  width:100%;font-family:'Archivo',sans-serif;font-size:15px;font-weight:500;color:var(--tinta);
+  background:var(--papel);border:1.5px solid var(--linea);border-radius:12px;
+  padding:13px 14px;transition:.18s border,.18s box-shadow,.18s background;
+}
+.input-money input{padding-left:30px}
+input:focus,select:focus{outline:none;border-color:var(--azul);background:var(--blanco);box-shadow:0 0 0 4px rgba(0,60,138,.10)}
+select{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235b6878' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+
+.slider-row{display:flex;align-items:center;gap:14px;margin-top:4px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:100px;background:var(--azul-100);cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--azul);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,60,138,.4);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--azul);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,60,138,.4);cursor:pointer}
+.slider-val{min-width:64px;text-align:right;font-weight:700;font-size:15px;color:var(--azul)}
+
+.seg{display:flex;background:var(--papel);border:1.5px solid var(--linea);border-radius:12px;padding:4px;gap:4px}
+.seg button{flex:1;border:none;background:transparent;font-family:'Archivo';font-size:13px;font-weight:600;color:var(--gris);padding:9px 6px;border-radius:9px;cursor:pointer;transition:.15s}
+.seg button.active{background:var(--azul);color:#fff;box-shadow:0 2px 8px rgba(0,60,138,.25)}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.divider{height:1px;background:var(--linea);margin:22px 0}
+.adv-toggle{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--azul);cursor:pointer;user-select:none}
+.adv-toggle svg{transition:.2s transform}
+.adv-toggle.open svg{transform:rotate(180deg)}
+.adv-body{display:none;margin-top:16px}
+.adv-body.open{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
+.btn{
+  width:100%;font-family:'Archivo';font-size:15px;font-weight:700;letter-spacing:.01em;
+  border:none;border-radius:13px;padding:15px;cursor:pointer;transition:.18s;display:flex;align-items:center;justify-content:center;gap:9px;
+}
+.btn-primary{background:var(--azul);color:#fff;box-shadow:0 4px 14px rgba(0,60,138,.3)}
+.btn-primary:hover{background:var(--azul-900);transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,60,138,.38)}
+.btn-ghost{background:#fff;color:var(--azul);border:1.5px solid var(--azul-100);margin-top:10px}
+.btn-ghost:hover{background:var(--azul-50)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* ===== RESULTS ===== */
+.results{display:flex;flex-direction:column;gap:24px;min-width:0}
+.empty{
+  background:var(--blanco);border:1.5px dashed var(--linea);border-radius:20px;
+  padding:70px 30px;text-align:center;color:var(--gris-suave);
+}
+.empty .ico{width:58px;height:58px;margin:0 auto 16px;border-radius:16px;background:var(--azul-50);display:flex;align-items:center;justify-content:center;color:var(--azul)}
+.empty h3{font-family:'Fraunces',serif;font-weight:600;font-size:20px;color:var(--gris);margin-bottom:6px}
+
+.highlight{
+  background:linear-gradient(135deg,var(--azul) 0%,var(--azul-900) 100%);
+  border-radius:20px;padding:26px;color:#fff;position:relative;overflow:hidden;
+  box-shadow:var(--sombra-lg);
+}
+.highlight::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.06)}
+.highlight::before{content:"";position:absolute;right:30px;bottom:-80px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.05)}
+.highlight .hl-label{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.highlight .hl-amount{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(34px,6vw,46px);line-height:1.05;margin:8px 0 4px;letter-spacing:-.02em}
+.highlight .hl-sub{font-size:13.5px;color:rgba(255,255,255,.78)}
+.hl-pills{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;position:relative;z-index:1}
+.hl-pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);border-radius:11px;padding:11px 15px;backdrop-filter:blur(4px)}
+.hl-pill .p-lbl{font-size:11px;color:rgba(255,255,255,.7);letter-spacing:.04em}
+.hl-pill .p-val{font-size:16px;font-weight:700;margin-top:2px}
+
+.dl-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+@media(max-width:520px){.dl-grid{grid-template-columns:1fr}}
+.dl-item{padding:15px 4px;border-bottom:1px solid var(--linea)}
+.dl-item:nth-child(odd){padding-right:18px}
+.dl-item:nth-child(even){padding-left:18px;border-left:1px solid var(--linea)}
+@media(max-width:520px){.dl-item:nth-child(even){padding-left:4px;border-left:none}}
+.dl-item .k{font-size:12.5px;color:var(--gris);margin-bottom:3px}
+.dl-item .v{font-size:17px;font-weight:700;color:var(--tinta);letter-spacing:-.01em}
+.dl-item .v.accent{color:var(--azul)}
+.dl-item.total{grid-column:1/-1;border:none;padding-top:18px;margin-top:4px;display:flex;justify-content:space-between;align-items:center;background:var(--azul-50);margin:8px -24px -22px;padding:18px 24px;border-radius:0}
+.dl-item.total .k{font-size:14px;font-weight:600;color:var(--azul-900);margin:0}
+.dl-item.total .v{font-size:22px;color:var(--azul);font-family:'Fraunces',serif}
+
+.alert{display:flex;gap:11px;padding:13px 15px;border-radius:12px;font-size:13.5px;font-weight:500;align-items:flex-start;margin-bottom:18px}
+.alert svg{flex-shrink:0;margin-top:1px}
+.alert-ok{background:#eaf6f0;color:var(--verde);border:1px solid #c8e6d6}
+.alert-warn{background:#fdf6e8;color:var(--ambar);border:1px solid #f3e3bf}
+.alert-bad{background:#fbeaea;color:var(--rojo);border:1px solid #f1cccc}
+
+/* amortization table */
+.tbl-wrap{max-height:430px;overflow:auto;border-radius:12px;border:1px solid var(--linea)}
+table.amort{width:100%;border-collapse:collapse;font-size:12px}
+table.amort th{position:sticky;top:0;background:var(--azul);color:#fff;font-weight:600;padding:10px 8px;text-align:right;white-space:nowrap;font-size:11px;letter-spacing:.02em}
+table.amort th:first-child{text-align:center}
+table.amort td{padding:9px 8px;text-align:right;border-bottom:1px solid var(--linea);white-space:nowrap;font-variant-numeric:tabular-nums}
+table.amort td:first-child{text-align:center;font-weight:700;color:var(--azul)}
+table.amort tr:nth-child(even) td{background:var(--papel)}
+table.amort tr:hover td{background:var(--azul-50)}
+
+/* amortization mobile - tabla compacta de un renglón por pago, scroll horizontal */
+.tbl-mobile{display:none}
+.am-cards{border-radius:12px;border:1px solid var(--linea);overflow:hidden;width:100%;max-width:100%}
+.mtbl-scroll{max-height:480px;overflow:auto;-webkit-overflow-scrolling:touch;width:100%}
+table.amort-mini{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-size:11px}
+table.amort-mini th{position:sticky;top:0;z-index:2;background:var(--azul);color:#fff;font-weight:600;padding:9px 8px;text-align:right;white-space:nowrap;font-size:10.5px;letter-spacing:.01em}
+table.amort-mini td{padding:9px 8px;text-align:right;border-bottom:1px solid var(--linea);white-space:nowrap;font-variant-numeric:tabular-nums;font-size:11px;background:var(--blanco)}
+table.amort-mini tr:nth-child(even) td{background:var(--papel)}
+/* columna Pago fija a la izquierda */
+table.amort-mini th.c-pago{left:0;z-index:3;text-align:center;min-width:46px}
+table.amort-mini td.c-pago{position:sticky;left:0;z-index:1;text-align:center;font-weight:700;color:var(--azul);box-shadow:1px 0 0 var(--linea)}
+table.amort-mini tr:nth-child(even) td.c-pago{background:var(--azul-50)}
+table.amort-mini tr:nth-child(odd) td.c-pago{background:var(--azul-50)}
+/* columna Mensualidad total fija a la derecha */
+table.amort-mini th.c-total{right:0;z-index:3}
+table.amort-mini td.c-total{position:sticky;right:0;z-index:1;font-weight:700;color:var(--tinta);box-shadow:-1px 0 0 var(--linea)}
+table.amort-mini tr td.c-total{background:#eef3fb}
+.mtbl-hint{font-size:11px;color:var(--gris-suave);text-align:center;padding:8px 6px 2px;margin:0}
+
+.note{font-size:12px;color:var(--gris-suave);line-height:1.55;margin-top:14px}
+.disclaimer-box{background:var(--papel);border:1px solid var(--linea);border-radius:14px;padding:16px 18px;font-size:12.5px;color:var(--gris);line-height:1.6;margin-top:6px}
+.disclaimer-box b{color:var(--tinta)}
+
+/* ===== CTA: volver al inicio / WhatsApp ===== */
+.cta-card{
+  display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap;
+  background:linear-gradient(135deg,#fff 0%,var(--azul-50) 100%);
+  border:1px solid var(--azul-100);border-radius:20px;padding:24px 26px;box-shadow:var(--sombra);
+}
+.cta-text h3{font-family:'Fraunces',serif;font-weight:600;font-size:20px;color:var(--tinta);letter-spacing:-.01em;margin-bottom:4px}
+.cta-text p{font-size:14px;color:var(--gris);margin:0}
+.cta-actions{display:flex;gap:12px;flex-wrap:wrap}
+.cta-btn{
+  display:inline-flex;align-items:center;gap:9px;text-decoration:none;
+  font-family:'Archivo';font-weight:700;font-size:14.5px;letter-spacing:.005em;
+  padding:13px 20px;border-radius:13px;transition:.18s;white-space:nowrap;cursor:pointer;
+}
+.cta-wa{background:#25D366;color:#fff;box-shadow:0 4px 14px rgba(37,211,102,.34)}
+.cta-wa:hover{background:#1eb858;transform:translateY(-2px);box-shadow:0 6px 20px rgba(37,211,102,.42)}
+.cta-home{background:#fff;color:var(--azul);border:1.5px solid var(--azul-100)}
+.cta-home:hover{background:var(--azul);color:#fff;border-color:var(--azul);transform:translateY(-2px)}
+
+footer.foot{border-top:1px solid var(--linea);background:rgba(255,255,255,.6);padding:30px 0;margin-top:20px}
+.foot-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding-bottom:24px;margin-bottom:22px;border-bottom:1px solid var(--linea)}
+.foot-inner{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--gris)}
+.foot-inner img{height:30px;opacity:.85}
+
+.logo-uploader{font-size:12px;color:var(--gris);margin-top:10px;display:flex;align-items:center;gap:8px}
+.logo-uploader label{color:var(--azul);font-weight:600;cursor:pointer;text-decoration:underline}
+.logo-uploader input{display:none}
+
+/* ===== Botón instalar PWA ===== */
+.install-fab{
+  position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:60;
+  display:none;align-items:center;gap:8px;
+  background:var(--azul);color:#fff;border:none;border-radius:100px;
+  padding:13px 20px;font-family:'Archivo';font-weight:700;font-size:14px;
+  box-shadow:0 6px 24px rgba(0,60,138,.4);cursor:pointer;transition:.2s;
+}
+.install-fab:hover{background:var(--azul-900);transform:translateY(-2px)}
+.install-fab.show{display:flex;animation:fade .4s ease}
+
+/* ===== Responsive móvil ===== */
+@media(max-width:920px){
+  .panel{position:static}
+}
+/* La tabla de 8 columnas se corta antes que el resto del layout: cambiar a tarjetas a 760px */
+@media(max-width:760px){
+  .tbl-desktop{display:none}
+  .tbl-mobile{display:block}
+}
+@media(max-width:640px){
+  .wrap{padding:0 16px}
+  .topbar-inner{height:62px}
+  .brand img{height:38px}
+  .brand-sep,.brand-tag{display:none}
+  .topbar-cta{font-size:12px}
+  .hero{padding:30px 0 18px}
+  .hero h1{font-size:30px}
+  .hero p.sub{font-size:15px}
+  .grid{gap:18px;padding:8px 0 90px}
+  .card{border-radius:16px}
+  .card-body{padding:18px 16px}
+  .card-head{padding:16px 18px}
+  .highlight{padding:22px 18px}
+  .highlight .hl-amount{font-size:34px}
+  .two-col{grid-template-columns:1fr;gap:0}
+  .dl-grid{grid-template-columns:1fr}
+  .dl-item:nth-child(even){padding-left:4px;border-left:none}
+  .dl-item.total{margin:8px -16px -18px;padding:16px 18px}
+  .hl-pills{gap:8px}
+  .hl-pill{flex:1 1 calc(50% - 4px);min-width:0}
+  .cta-card{flex-direction:column;align-items:stretch;text-align:center;padding:22px 18px;gap:18px}
+  .cta-actions{flex-direction:column}
+  .cta-btn{justify-content:center;width:100%;padding:15px}
+  .foot-cta{flex-direction:column}
+  .install-fab{left:16px;right:16px;justify-content:center}
+}
+@media(max-width:380px){
+  .hero h1{font-size:26px}
+  .highlight .hl-amount{font-size:30px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <img id="brandLogo" alt="AGENTO Bienes Raíces">
+      <div class="brand-sep"></div>
+      <div class="brand-tag">Simulador de Crédito Hipotecario</div>
+    </div>
+    <div class="topbar-cta">Herramienta informativa · <b>MXN</b></div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="kicker">● Precalifica tu crédito en segundos</span>
+    <h1>Conoce tu mensualidad y tu <em>plan de pagos</em> completo.</h1>
+    <p class="sub">Ajusta el valor de la propiedad, el plazo y la tasa. Obtén tu tabla de amortización mes a mes y descárgala en PDF con la marca AGENTO.</p>
+  </div>
+</section>
+
+<main class="wrap">
+  <div class="grid">
+
+    <!-- ============ FORM PANEL ============ -->
+    <div class="panel">
+      <div class="card">
+        <div class="card-head"><h2>Datos de tu simulación</h2><span class="num">1</span></div>
+        <div class="card-body">
+
+          <div class="field">
+            <label class="lbl" for="nombre">Nombre del cliente <span class="hint">opcional</span></label>
+            <input type="text" id="nombre" placeholder="Ej. Juan Pérez García">
+          </div>
+
+          <div class="field">
+            <label class="lbl" for="valor">Valor de la propiedad</label>
+            <div class="input-money"><span class="sign">$</span><input type="text" id="valor" inputmode="decimal" value="5,000,000.00"></div>
+          </div>
+
+          <div class="field">
+            <label class="lbl">Porcentaje de financiamiento <span class="hint" id="finHint">máx. 90%</span></label>
+            <div class="slider-row">
+              <input type="range" id="finRange" min="10" max="90" step="0.5" value="90">
+              <span class="slider-val" id="finVal">90%</span>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="field">
+              <label class="lbl" for="credito">Crédito solicitado</label>
+              <div class="input-money"><span class="sign">$</span><input type="text" id="credito" inputmode="decimal" value="4,500,000.00"></div>
+            </div>
+            <div class="field">
+              <label class="lbl">Enganche</label>
+              <div class="input-money"><span class="sign">$</span><input type="text" id="enganche" value="500,000.00" readonly style="background:#f0f2f6;color:var(--gris)"></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="lbl" for="plazo">Plazo del crédito</label>
+            <select id="plazo">
+              <option value="5">5 años (60 meses)</option>
+              <option value="10">10 años (120 meses)</option>
+              <option value="15">15 años (180 meses)</option>
+              <option value="20" selected>20 años (240 meses)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="lbl">Tipo de tasa</label>
+            <div class="seg" id="tipoTasa">
+              <button data-t="fija" class="active">Fija única</button>
+              <button data-t="creciente">Creciente (3 tramos)</button>
+            </div>
+          </div>
+
+          <div class="field" id="tasaFijaWrap">
+            <label class="lbl" for="tasa">Tasa de interés ordinaria fija anual <span class="hint">%</span></label>
+            <input type="number" id="tasa" step="0.01" value="10.10">
+          </div>
+
+          <div class="field" id="tasaCrecWrap" style="display:none">
+            <label class="lbl">Tasas por tramo <span class="hint">años 1-3 / 4-6 / 7-fin</span></label>
+            <div class="two-col" style="grid-template-columns:1fr 1fr 1fr">
+              <input type="number" id="tasaA" step="0.01" value="9.50" placeholder="1-3">
+              <input type="number" id="tasaB" step="0.01" value="10.10" placeholder="4-6">
+              <input type="number" id="tasaC" step="0.01" value="10.80" placeholder="7+">
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="lbl" for="ingreso">Ingreso mensual estimado <span class="hint">automático · 30% de la mensualidad</span></label>
+            <div class="input-money"><span class="sign">$</span><input type="text" id="ingreso" inputmode="decimal" value="202,970.15"></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="adv-toggle" id="advToggle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            Parámetros y comisiones (avanzado)
+          </div>
+          <div class="adv-body" id="advBody">
+            <div class="two-col">
+              <div class="field"><label class="lbl">Comisión apertura <span class="hint">%</span></label><input type="number" id="comApertura" step="0.01" value="1.00"></div>
+              <div class="field"><label class="lbl">Com. admin mensual <span class="hint">$</span></label><input type="number" id="comAdmin" step="0.01" value="560.00"></div>
+            </div>
+            <div class="two-col">
+              <div class="field"><label class="lbl">Gastos notariales <span class="hint">% valor</span></label><input type="number" id="pctNotarial" step="0.01" value="5.50"></div>
+              <div class="field"><label class="lbl">Avalúo bancario <span class="hint">$ · automático</span></label><input type="number" id="avaluo" step="1" value="12000"></div>
+            </div>
+            <div class="two-col">
+              <div class="field"><label class="lbl">Preoriginación <span class="hint">$</span></label><input type="number" id="preorig" step="1" value="780"></div>
+              <div class="field"><label class="lbl">Seguro de vida <span class="hint">% anual s/ saldo</span></label><input type="number" id="tasaVida" step="0.001" value="0.645"></div>
+            </div>
+            <div class="two-col">
+              <div class="field"><label class="lbl">Seguro de daños <span class="hint">$ mensual fijo</span></label><input type="number" id="danosMensual" step="0.01" value="1866.08"></div>
+              <div class="field"><label class="lbl">Pago por mil <span class="hint">0 = francés</span></label><input type="number" id="pagoMil" step="0.0001" value="9.8174"></div>
+            </div>
+            <input type="hidden" id="seguroIni" value="5673.13">
+            <div class="field"><label class="lbl">Incremento anual de mensualidad <span class="hint">% (esquema creciente, hasta año 14)</span></label><input type="number" id="incAnual" step="0.1" value="0.0"></div>
+            <div class="logo-uploader">
+              Logotipo para el PDF:
+              <label for="logoFile">cambiar imagen</label>
+              <input type="file" id="logoFile" accept="image/*">
+            </div>
+          </div>
+
+          <div class="divider"></div>
+          <button class="btn btn-primary" id="calcBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+            Calcular simulación
+          </button>
+          <button class="btn btn-ghost" id="pdfBtn" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar simulación en PDF
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ RESULTS ============ -->
+    <div class="results" id="results">
+      <div class="empty" id="emptyState">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
+        <h3>Tu simulación aparecerá aquí</h3>
+        <p>Completa los datos a la izquierda y presiona <b>Calcular simulación</b>.</p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-cta">
+      <a class="cta-btn cta-wa" href="https://wa.me/524445755812?text=Hola%2C%20tengo%20dudas%20sobre%20mi%20cr%C3%A9dito%20hipotecario." target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Dudas por WhatsApp
+      </a>
+      <a class="cta-btn cta-home" href="https://www.agento.com.mx/" target="_blank" rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Volver al inicio
+      </a>
+    </div>
+    <div class="foot-inner">
+      <img id="footLogo" alt="AGENTO">
+      <div>© <span id="year"></span> AGENTO Bienes Raíces · Cantidades en pesos mexicanos (MXN). Ejercicio informativo, no constituye oferta de crédito.</div>
+    </div>
+  </div>
+</footer>
+
+<button class="install-fab" id="installFab">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  Instalar app
+</button>
+
+<script>
+/* ============================================================
+   AGENTO · Simulador de Crédito Hipotecario
+   Lógica financiera + generación de PDF
+   Cantidades en MXN. Ejercicio informativo (no es oferta).
+   ============================================================ */
+
+/* ---------- Logo embebido (base64) ---------- */
+let LOGO_DATA = "data:image/jpeg;base64,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";
+
+/* ---------- Utilidades de formato ---------- */
+const fmtMXN = n => "$ " + (isFinite(n)?n:0).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtNum = n => (isFinite(n)?n:0).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtPct = n => fmtNum(n) + " %";
+const parseNum = s => {
+  if(typeof s === "number") return s;
+  return parseFloat(String(s).replace(/[^0-9.\-]/g,"")) || 0;
+};
+const MESES_ES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const fechaLarga = d => `${d.getDate()} de ${MESES_ES[d.getMonth()]} del ${d.getFullYear()}`;
+const diasDelMes = (anio,mes) => new Date(anio,mes+1,0).getDate(); // mes 0-index
+
+/* Avalúo bancario estimado (método "por millar" usado en México):
+   ~$3 por cada $1000 del valor (0.30%), con piso de $2,900.
+   Fuente: tarifas SHF / peritos valuadores. */
+function avaluoEstimado(valor){
+  let costo = valor/1000 * 3.0;        // $3 por millar = 0.30%
+  costo = Math.max(2900, costo);       // mínimo de mercado
+  return Math.round(costo);
+}
+
+/* ---------- Estado global de la última simulación ---------- */
+let SIM = null;
+
+/* ============================================================
+   NÚCLEO FINANCIERO
+   ============================================================ */
+
+/* Pago mensual fijo - sistema francés */
+function pagoFrances(principal, tasaAnual, nMeses){
+  const i = tasaAnual/100/12;
+  if(i === 0) return principal/nMeses;
+  return principal * (i*Math.pow(1+i,nMeses)) / (Math.pow(1+i,nMeses)-1);
+}
+
+/* Devuelve la tasa aplicable a un mes dado (1-index) según esquema */
+function tasaDelMes(cfg, mesIndex){
+  if(cfg.tipoTasa === "fija") return cfg.tasa;
+  const anio = Math.ceil(mesIndex/12);
+  if(anio <= 3) return cfg.tasaA;
+  if(anio <= 6) return cfg.tasaB;
+  return cfg.tasaC;
+}
+
+/* Construye la tabla de amortización completa.
+   - Interés calculado sobre días reales del mes (réplica del estilo BBVA).
+   - Seguro de vida: % anual sobre saldo insoluto. Seguro de daños: monto fijo mensual.
+   - Soporta incremento anual de mensualidad (esquema creciente). */
+function construirAmortizacion(cfg){
+  const n = cfg.plazo*12;
+  const filas = [];
+  let saldo = cfg.credito;
+
+  // Mensualidad base de capital+interés.
+  // Si hay "pago por mil" definido (>0) se usa el método BBVA: mensualidad = credito/1000 * factor.
+  // Si no, se usa el sistema francés estándar.
+  const tasaProm = cfg.tipoTasa === "fija"
+    ? cfg.tasa
+    : (cfg.tasaA*Math.min(36,n) + cfg.tasaB*Math.max(0,Math.min(36,n-36)) + cfg.tasaC*Math.max(0,n-72))/n;
+  let mensualidadBase = (cfg.pagoMil && cfg.pagoMil>0)
+    ? cfg.credito/1000 * cfg.pagoMil
+    : pagoFrances(cfg.credito, tasaProm, n);
+
+  // Fecha base para días reales
+  const base = new Date(cfg.fecha.getFullYear(), cfg.fecha.getMonth(), 1);
+
+  let totalInteres=0, totalCapital=0, totalSeguro=0, totalComAdmin=0, totalMensTotal=0;
+
+  // Seguros (modelo calibrado con datos reales BBVA):
+  //  - Seguro de VIDA: tasa anual sobre el SALDO INSOLUTO (decrece con la deuda).
+  //  - Seguro de DAÑOS: monto fijo mensual (prima sobre valor de construcción).
+  const tasaVidaMensual = (cfg.tasaVidaAnual||0)/100/12;
+  const danosFijoMensual = cfg.danosMensual||0;
+
+  for(let m=1;m<=n;m++){
+    const tasaM = tasaDelMes(cfg, m);
+    const fechaMes = new Date(base.getFullYear(), base.getMonth()+m-1, 1);
+    const dias = diasDelMes(fechaMes.getFullYear(), fechaMes.getMonth());
+    const tasaDiaria = tasaM/100/360;             // base 360
+    let interes = saldo * tasaDiaria * dias;
+
+    // incremento anual de mensualidad (creciente) hasta año 14
+    let mensualidad = mensualidadBase;
+    if(cfg.incAnual > 0){
+      const anio = Math.ceil(m/12);
+      const tope = Math.min(anio-1,14);
+      mensualidad = mensualidadBase * Math.pow(1+cfg.incAnual/100, tope);
+    }
+
+    let amort = mensualidad - interes;
+    // último mes: ajustar para liquidar
+    if(m === n || amort > saldo){
+      amort = saldo;
+      mensualidad = interes + amort;
+    }
+    const saldoInicial = saldo;
+    saldo = Math.max(0, saldo - amort);
+
+    // Seguro del periodo: vida sobre saldo inicial del mes + daños fijo
+    const seguro = saldoInicial * tasaVidaMensual + danosFijoMensual;
+
+    const mensTotal = mensualidad + seguro + cfg.comAdmin;
+
+    totalInteres += interes;
+    totalCapital += amort;
+    totalSeguro  += seguro;
+    totalComAdmin+= cfg.comAdmin;
+    totalMensTotal += mensTotal;
+
+    filas.push({
+      pago:m, saldo:saldoInicial, interes, amort,
+      mensualidad, seguro, comAdmin:cfg.comAdmin, mensTotal, anticipado:0
+    });
+
+    if(saldo<=0) break;
+  }
+
+  return {
+    filas,
+    mensualidadBase,
+    tasaProm,
+    totales:{
+      interes:totalInteres,
+      capital:totalCapital,
+      capitalMasInteres:totalInteres+totalCapital,
+      seguros:totalSeguro,
+      comAdmin:totalComAdmin,
+      totalAPagar:totalInteres+totalCapital+totalSeguro+totalComAdmin
+    }
+  };
+}
+
+/* Gastos de originación + desembolso inicial */
+function calcularDesembolso(cfg){
+  const notarial = cfg.valor * cfg.pctNotarial/100;
+  const comApertura = cfg.credito * cfg.comApertura/100;
+  const desembolso = cfg.enganche + notarial + cfg.avaluo + cfg.preorig + comApertura;
+  return {notarial, comApertura, avaluo:cfg.avaluo, preorig:cfg.preorig, enganche:cfg.enganche, desembolso};
+}
+
+/* CAT — Metodología oficial Banxico (Circular 21/2009) para Crédito Garantizado a la Vivienda.
+   Se resuelve la tasa periódica i en:  Σ Aj/(1+i)^tj  =  Σ Bk/(1+i)^sk
+   Aj = disposición que RECIBE el cliente en t=0: el crédito menos los costos que se
+        descuentan del monto entregado (comisión por apertura, avalúo y gastos de
+        preoriginación / investigación). NO incluye enganche ni gastos notariales, que
+        corresponden a la compraventa, no al financiamiento.
+   Bk = pagos del cliente en cada periodo: la mensualidad total
+        (capital + interés + seguros de vida y daños + comisión por administración).
+   Periodo mensual; CAT = (1+i)^12 - 1.  i se halla por bisección. */
+function calcularCAT(cfg, amort, deso){
+  const disposicionNeta = cfg.credito - deso.comApertura - deso.avaluo - deso.preorig;
+  const flujos = [disposicionNeta];
+  amort.filas.forEach(f => flujos.push(-f.mensTotal));
+
+  const vpn = i => flujos.reduce((acc,cf,t)=>acc + cf/Math.pow(1+i,t), 0);
+
+  // El VPN es creciente en i. Bisección por amplitud del intervalo.
+  let lo=1e-9, hi=1.0;
+  if(vpn(lo) > 0) return 0;          // sin costo
+  for(let k=0;k<200;k++){
+    const mid=(lo+hi)/2;
+    if(vpn(mid) > 0) hi=mid; else lo=mid;
+    if(hi-lo < 1e-13) break;
+  }
+  const i=(lo+hi)/2;
+  const catAnual = (Math.pow(1+i,12) - 1) * 100;
+  return isFinite(catAnual) ? catAnual : 0;
+}
+
+/* ============================================================
+   ORQUESTADOR
+   ============================================================ */
+function leerConfig(){
+  const tipoTasa = document.querySelector("#tipoTasa button.active").dataset.t;
+  const valor = parseNum(document.getElementById("valor").value);
+  const credito = parseNum(document.getElementById("credito").value);
+  const enganche = valor - credito;
+  return {
+    nombre: document.getElementById("nombre").value.trim() || "—",
+    valor, credito, enganche,
+    finPct: credito/valor*100,
+    plazo: parseInt(document.getElementById("plazo").value,10),
+    tipoTasa,
+    tasa: parseNum(document.getElementById("tasa").value),
+    tasaA: parseNum(document.getElementById("tasaA").value),
+    tasaB: parseNum(document.getElementById("tasaB").value),
+    tasaC: parseNum(document.getElementById("tasaC").value),
+    ingreso: parseNum(document.getElementById("ingreso").value),
+    comApertura: parseNum(document.getElementById("comApertura").value),
+    comAdmin: parseNum(document.getElementById("comAdmin").value),
+    pctNotarial: parseNum(document.getElementById("pctNotarial").value),
+    avaluo: parseNum(document.getElementById("avaluo").value),
+    preorig: parseNum(document.getElementById("preorig").value),
+    seguroIni: parseNum(document.getElementById("seguroIni").value),
+    tasaVidaAnual: parseNum(document.getElementById("tasaVida").value),
+    danosMensual: parseNum(document.getElementById("danosMensual").value),
+    pagoMil: parseNum(document.getElementById("pagoMil").value),
+    incAnual: parseNum(document.getElementById("incAnual").value),
+    fecha: new Date()
+  };
+}
+
+function ejecutar(){
+  const cfg = leerConfig();
+  if(cfg.valor<=0 || cfg.credito<=0){ alert("Ingresa un valor de propiedad y un crédito válidos."); return; }
+  if(cfg.credito>cfg.valor){ alert("El crédito no puede ser mayor al valor de la propiedad."); return; }
+
+  const amort = construirAmortizacion(cfg);
+  const deso  = calcularDesembolso(cfg);
+  const cat   = calcularCAT(cfg, amort, deso);
+  const mens1 = amort.filas[0].mensTotal;
+
+  // Ingreso recomendado: aquel donde la mensualidad representa el 30%.
+  // Salvo que el usuario lo haya escrito manualmente, se autocalcula como mensualidad/0.30.
+  if(!window.__ingresoManual){
+    cfg.ingreso = mens1/0.30;
+    const ingEl=document.getElementById("ingreso");
+    if(ingEl) ingEl.value = fmtNum(cfg.ingreso);
+  }
+  const ratio = cfg.ingreso>0 ? mens1/cfg.ingreso*100 : 0;
+
+  SIM = {cfg, amort, deso, cat, mens1, ratio};
+  render(SIM);
+  document.getElementById("pdfBtn").disabled = false;
+  document.getElementById("results").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ============================================================
+   RENDER EN PANTALLA
+   ============================================================ */
+function render(S){
+  const {cfg,amort,deso,cat,mens1,ratio} = S;
+  const t = amort.totales;
+
+  let alert;
+  if(cfg.finPct>90){ alert = `<div class="alert alert-bad"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>El financiamiento (${fmtNum(cfg.finPct)}%) supera el máximo de 90%. Aumenta el enganche.</div>`; }
+  else if(ratio>35){ alert = `<div class="alert alert-warn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>La mensualidad representa el ${fmtNum(ratio)}% de tu ingreso (recomendado ≤ 35%).</div>`; }
+  else { alert = `<div class="alert alert-ok"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Capacidad de pago saludable: la mensualidad es el ${fmtNum(ratio)}% de tu ingreso.</div>`; }
+
+  // filas de tabla (vista escritorio)
+  let rows="";
+  amort.filas.forEach(f=>{
+    rows += `<tr><td>${f.pago}</td><td>${fmtNum(f.saldo)}</td><td>${fmtNum(f.interes)}</td><td>${fmtNum(f.amort)}</td><td>${fmtNum(f.mensualidad)}</td><td>${fmtNum(f.seguro)}</td><td>${fmtNum(f.comAdmin)}</td><td><b>${fmtNum(f.mensTotal)}</b></td></tr>`;
+  });
+
+  // filas tabla compacta móvil - cada pago en UN renglón (scroll horizontal)
+  let mrows="";
+  amort.filas.forEach(f=>{
+    mrows += `<tr><td class="c-pago">${f.pago}</td><td>${fmtNum(f.saldo)}</td><td>${fmtNum(f.interes)}</td><td>${fmtNum(f.amort)}</td><td>${fmtNum(f.mensualidad)}</td><td>${fmtNum(f.seguro)}</td><td>${fmtNum(f.comAdmin)}</td><td class="c-total">${fmtNum(f.mensTotal)}</td></tr>`;
+  });
+
+  const tramos = cfg.tipoTasa==="fija"
+    ? `${fmtPct(cfg.tasa)} fija`
+    : `${fmtNum(cfg.tasaA)}% / ${fmtNum(cfg.tasaB)}% / ${fmtNum(cfg.tasaC)}%`;
+
+  document.getElementById("results").innerHTML = `
+    <div class="highlight">
+      <div class="hl-label">Mensualidad total (mes 1)</div>
+      <div class="hl-amount">${fmtMXN(mens1)}</div>
+      <div class="hl-sub">Capital + interés + seguros + comisión por administración</div>
+      <div class="hl-pills">
+        <div class="hl-pill"><div class="p-lbl">Plazo</div><div class="p-val">${cfg.plazo} años</div></div>
+        <div class="hl-pill"><div class="p-lbl">Tasa</div><div class="p-val">${tramos}</div></div>
+        <div class="hl-pill"><div class="p-lbl">CAT informativo</div><div class="p-val">${fmtNum(cat)}%</div></div>
+        <div class="hl-pill"><div class="p-lbl">Financiamiento</div><div class="p-val">${fmtNum(cfg.finPct)}%</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Desembolso inicial requerido</h2><span class="num">2</span></div>
+      <div class="card-body">
+        ${alert}
+        <div class="dl-grid">
+          <div class="dl-item"><div class="k">Valor de la propiedad</div><div class="v">${fmtMXN(cfg.valor)}</div></div>
+          <div class="dl-item"><div class="k">Crédito otorgado</div><div class="v accent">${fmtMXN(cfg.credito)}</div></div>
+          <div class="dl-item"><div class="k">Enganche</div><div class="v">${fmtMXN(deso.enganche)}</div></div>
+          <div class="dl-item"><div class="k">Gastos notariales (estimado)</div><div class="v">${fmtMXN(deso.notarial)}</div></div>
+          <div class="dl-item"><div class="k">Avalúo bancario</div><div class="v">${fmtMXN(deso.avaluo)}</div></div>
+          <div class="dl-item"><div class="k">Preoriginación</div><div class="v">${fmtMXN(deso.preorig)}</div></div>
+          <div class="dl-item"><div class="k">Comisión por apertura (${fmtNum(cfg.comApertura)}%)</div><div class="v">${fmtMXN(deso.comApertura)}</div></div>
+          <div class="dl-item"></div>
+          <div class="dl-item total"><div class="k">Desembolso inicial requerido</div><div class="v">${fmtMXN(deso.desembolso)}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Totales de la simulación</h2><span class="num">3</span></div>
+      <div class="card-body">
+        <div class="dl-grid">
+          <div class="dl-item"><div class="k">Interés total</div><div class="v">${fmtMXN(t.interes)}</div></div>
+          <div class="dl-item"><div class="k">Pago a capital</div><div class="v">${fmtMXN(t.capital)}</div></div>
+          <div class="dl-item"><div class="k">Capital + intereses</div><div class="v">${fmtMXN(t.capitalMasInteres)}</div></div>
+          <div class="dl-item"><div class="k">Seguros de vida y daños</div><div class="v">${fmtMXN(t.seguros)}</div></div>
+          <div class="dl-item"><div class="k">Comisión por administración</div><div class="v">${fmtMXN(t.comAdmin)}</div></div>
+          <div class="dl-item"></div>
+          <div class="dl-item total"><div class="k">Total a pagar</div><div class="v">${fmtMXN(t.totalAPagar)}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Tabla de amortización · ${amort.filas.length} pagos</h2><span class="num">4</span></div>
+      <div class="card-body">
+        <div class="tbl-wrap tbl-desktop">
+          <table class="amort">
+            <thead><tr>
+              <th>Pago</th><th>Saldo insoluto</th><th>Interés</th><th>Amortización</th>
+              <th>Mensualidad<br>(s/accesorios)</th><th>Seguros</th><th>Com. admin</th><th>Mensualidad total</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <div class="am-cards tbl-mobile">
+          <div class="mtbl-scroll">
+            <table class="amort amort-mini">
+              <thead><tr>
+                <th class="c-pago">Pago</th><th>Saldo insoluto</th><th>Interés</th><th>Amort.</th>
+                <th>Mens. s/acc.</th><th>Seguros</th><th>Com. adm.</th><th class="c-total">Mens. total</th>
+              </tr></thead>
+              <tbody>${mrows}</tbody>
+            </table>
+          </div>
+          <p class="mtbl-hint">← Desliza horizontalmente para ver todas las columnas →</p>
+        </div>
+        <p class="note">Desplázate para ver todos los pagos. El interés se calcula sobre días reales de cada mes, por lo que la cuota de capital+interés varía ligeramente entre meses. Los montos de seguros son informativos y pueden variar.</p>
+      </div>
+    </div>
+
+    <div class="disclaimer-box">
+      <b>Aviso importante.</b> Este ejercicio numérico es una simulación con fines informativos y de comparación elaborada por AGENTO Bienes Raíces.
+      No constituye una solicitud ni una oferta de crédito, ni implica obligación alguna para ninguna institución financiera.
+      Las condiciones definitivas (tasa, comisiones, seguros, gastos notariales y avalúo) las determina la institución que otorgue el crédito.
+      Es tu derecho solicitar la oferta vinculante para comparar distintas opciones. Todas las cantidades están expresadas en pesos mexicanos (MXN).
+    </div>
+
+    <div class="cta-card">
+      <div class="cta-text">
+        <h3>¿Tienes dudas sobre tu crédito?</h3>
+        <p>Un asesor de AGENTO puede ayudarte a dar el siguiente paso.</p>
+      </div>
+      <div class="cta-actions">
+        <a class="cta-btn cta-wa" href="https://wa.me/524445755812?text=Hola%2C%20acabo%20de%20usar%20el%20simulador%20hipotecario%20y%20tengo%20algunas%20dudas." target="_blank" rel="noopener">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Escríbenos por WhatsApp
+        </a>
+        <a class="cta-btn cta-home" href="https://www.agento.com.mx/" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Volver al inicio
+        </a>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   GENERACIÓN DE PDF
+   ============================================================ */
+function generarPDF(){
+  if(!SIM){ return; }
+  const {cfg,amort,deso,cat,mens1} = SIM;
+  const t = amort.totales;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:"pt",format:"a4"});
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const MX = 42;
+  const AZUL=[0,60,138], TINTA=[13,27,42], GRIS=[91,104,120], LINEA=[228,233,240], AZ50=[238,243,251];
+
+  const tramos = cfg.tipoTasa==="fija" ? `${fmtNum(cfg.tasa)} % fija`
+    : `${fmtNum(cfg.tasaA)}% (1-3) / ${fmtNum(cfg.tasaB)}% (4-6) / ${fmtNum(cfg.tasaC)}% (7+)`;
+
+  /* ---- encabezado reutilizable ---- */
+  function header(){
+    if(LOGO_DATA && LOGO_DATA.startsWith("data:")){
+      try{ doc.addImage(LOGO_DATA,"JPEG",MX,28,70,70); }catch(e){}
+    }
+    doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.setTextColor(...AZUL);
+    doc.text("Simulación de Crédito Hipotecario", MX+82, 50);
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...GRIS);
+    doc.text("AGENTO Bienes Raíces", MX+82, 66);
+    doc.text("Fecha de simulación: "+fechaLarga(cfg.fecha), MX+82, 80);
+    if(cfg.nombre!=="—") doc.text("Cliente: "+cfg.nombre, MX+82, 94);
+    doc.setDrawColor(...LINEA); doc.setLineWidth(1); doc.line(MX,108,W-MX,108);
+  }
+  /* ---- pie reutilizable ---- */
+  function footer(){
+    const pg = doc.internal.getCurrentPageInfo().pageNumber;
+    doc.setDrawColor(...LINEA); doc.line(MX,H-46,W-MX,H-46);
+    doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...GRIS);
+    doc.text("AGENTO Bienes Raíces · Ejercicio informativo, no constituye oferta de crédito. Cantidades en MXN.", MX, H-32);
+    doc.text("Página "+pg, W-MX, H-32, {align:"right"});
+  }
+
+  /* ---- helper: par etiqueta/valor en dos columnas ---- */
+  function pairBlock(items, startY){
+    let y=startY; const colW=(W-MX*2-20)/2;
+    for(let k=0;k<items.length;k+=2){
+      const left=items[k], right=items[k+1];
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...GRIS);
+      doc.text(left[0], MX, y);
+      doc.setFont("helvetica","bold"); doc.setFontSize(10.5); doc.setTextColor(...TINTA);
+      doc.text(left[1], MX, y+15);
+      if(right){
+        doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...GRIS);
+        doc.text(right[0], MX+colW+20, y);
+        doc.setFont("helvetica","bold"); doc.setFontSize(10.5); doc.setTextColor(...TINTA);
+        doc.text(right[1], MX+colW+20, y+15);
+      }
+      doc.setDrawColor(...LINEA); doc.line(MX,y+26,W-MX,y+26);
+      y+=42;
+    }
+    return y;
+  }
+  function sectionTitle(txt,y){
+    doc.setFillColor(...AZ50); doc.rect(MX,y-12,W-MX*2,24,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...AZUL);
+    doc.text(txt, MX+10, y+4);
+    return y+34;
+  }
+
+  /* ===================== PÁGINA 1 ===================== */
+  header();
+  let y=140;
+  y = sectionTitle("Condiciones del crédito", y);
+  y = pairBlock([
+    ["Plazo", cfg.plazo+" años ("+(cfg.plazo*12)+" meses)"],
+    ["Tasa de interés ordinaria anual", tramos],
+    ["Mensualidad total estimada (mes 1)", fmtMXN(mens1)],
+    ["CAT informativo (sin IVA)", fmtNum(cat)+" %"],
+    ["Comisión por apertura", fmtNum(cfg.comApertura)+" %"],
+    ["Ingreso mensual estimado", fmtMXN(cfg.ingreso)],
+  ], y);
+
+  y+=6;
+  y = sectionTitle("Recursos otorgados", y);
+  y = pairBlock([
+    ["Valor de la propiedad", fmtMXN(cfg.valor)],
+    ["Crédito otorgado", fmtMXN(cfg.credito)],
+    ["Porcentaje de financiamiento", fmtNum(cfg.finPct)+" %"],
+    ["Enganche", fmtMXN(cfg.enganche)],
+  ], y);
+
+  y+=6;
+  y = sectionTitle("Gastos de originación", y);
+  y = pairBlock([
+    ["Gastos notariales (estimado)", fmtMXN(deso.notarial)],
+    ["Avalúo bancario", fmtMXN(deso.avaluo)],
+    ["Gastos de preoriginación", fmtMXN(deso.preorig)],
+    ["Comisión por apertura", fmtMXN(deso.comApertura)],
+  ], y);
+
+  // desembolso destacado
+  doc.setFillColor(...AZUL); doc.roundedRect(MX,y,W-MX*2,46,6,6,"F");
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(255,255,255);
+  doc.text("Desembolso inicial requerido", MX+16, y+19);
+  doc.setFont("helvetica","bold"); doc.setFontSize(17);
+  doc.text(fmtMXN(deso.desembolso), W-MX-16, y+30, {align:"right"});
+  footer();
+
+  /* ===================== PÁGINA 2 ===================== */
+  doc.addPage(); header();
+  y=140;
+  y = sectionTitle("Totales de la simulación", y);
+  y = pairBlock([
+    ["Interés total", fmtMXN(t.interes)],
+    ["Pago a capital", fmtMXN(t.capital)],
+    ["Capital + intereses", fmtMXN(t.capitalMasInteres)],
+    ["Seguros de vida y daños", fmtMXN(t.seguros)],
+    ["Comisión por administración", fmtMXN(t.comAdmin)],
+  ], y);
+
+  doc.setFillColor(...AZUL); doc.roundedRect(MX,y,W-MX*2,46,6,6,"F");
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(255,255,255);
+  doc.text("Total a pagar", MX+16, y+19);
+  doc.setFont("helvetica","bold"); doc.setFontSize(17);
+  doc.text(fmtMXN(t.totalAPagar), W-MX-16, y+30, {align:"right"});
+  y+=70;
+
+  // notas / disclaimer
+  doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(...TINTA);
+  doc.text("Notas y consideraciones", MX, y); y+=16;
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...GRIS);
+  const notas = [
+    "• El interés de cada periodo se calcula sobre los días naturales del mes, por lo que la cuota de capital + interés puede variar ligeramente entre meses.",
+    "• Los gastos notariales son un estimado; el importe definitivo lo determina el notario público según la operación particular.",
+    "• El costo del avalúo y las primas de seguros son informativos y pueden variar al momento de la contratación.",
+    "• Si realizas pagos anticipados, se abonan a capital y puedes elegir reducir la mensualidad o el plazo.",
+    "• Es tu derecho solicitar la oferta vinculante para comparar distintas opciones de crédito."
+  ];
+  notas.forEach(nn=>{ const lines=doc.splitTextToSize(nn,W-MX*2); doc.text(lines,MX,y); y+=lines.length*11+3; });
+
+  y+=10;
+  doc.setDrawColor(...LINEA); doc.setFillColor(246,248,252);
+  doc.roundedRect(MX,y,W-MX*2,84,6,6,"FD");
+  doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...TINTA);
+  doc.text("Aviso importante", MX+12, y+18);
+  doc.setFont("helvetica","normal"); doc.setTextColor(...GRIS);
+  const disc = "Este ejercicio numérico es una simulación con fines informativos y de comparación elaborada por AGENTO Bienes Raíces. No constituye una solicitud ni una oferta de crédito, ni implica obligación alguna para ninguna institución financiera. Las condiciones definitivas (tasa, comisiones, seguros, gastos notariales y avalúo) las determina la institución que otorgue el crédito. Todas las cantidades están expresadas en pesos mexicanos (MXN).";
+  doc.text(doc.splitTextToSize(disc,W-MX*2-24), MX+12, y+32);
+  footer();
+
+  /* ===================== TABLA DE AMORTIZACIÓN ===================== */
+  const body = amort.filas.map(f=>[
+    f.pago, fmtNum(f.saldo), fmtNum(f.interes), fmtNum(f.amort),
+    fmtNum(f.mensualidad), fmtNum(f.seguro), fmtNum(f.comAdmin), fmtNum(f.mensTotal)
+  ]);
+
+  doc.addPage();
+  doc.autoTable({
+    head:[["Pago","Saldo insoluto","Interés","Amortización","Mens. s/acc.","Seguros","Com. admin","Mens. total"]],
+    body,
+    startY:130,
+    margin:{top:130,left:MX,right:MX,bottom:60},
+    styles:{font:"helvetica",fontSize:7.2,cellPadding:3,halign:"right",lineColor:LINEA,lineWidth:.4,textColor:TINTA},
+    headStyles:{fillColor:AZUL,textColor:[255,255,255],fontSize:7.2,halign:"right",fontStyle:"bold"},
+    columnStyles:{0:{halign:"center",fontStyle:"bold",textColor:AZUL},7:{fontStyle:"bold"}},
+    alternateRowStyles:{fillColor:[246,248,252]},
+    didDrawPage:function(data){
+      header();
+      doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...AZUL);
+      doc.text("Tabla de amortización · "+amort.filas.length+" pagos", MX, 124);
+      footer();
+    }
+  });
+
+  const nombreArch = "Simulacion-Hipotecaria-AGENTO" + (cfg.nombre!=="—" ? "-"+cfg.nombre.replace(/\s+/g,"_") : "") + ".pdf";
+  doc.save(nombreArch);
+}
+
+/* ============================================================
+   INTERACCIÓN DE LA UI
+   ============================================================ */
+function attachUI(){
+  // logo en header/footer
+  document.getElementById("brandLogo").src = LOGO_DATA;
+  document.getElementById("footLogo").src = LOGO_DATA;
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  const valorEl=document.getElementById("valor");
+  const credEl=document.getElementById("credito");
+  const engEl=document.getElementById("enganche");
+  const finRange=document.getElementById("finRange");
+  const finVal=document.getElementById("finVal");
+
+  const avaluoEl=document.getElementById("avaluo");
+  let avaluoManual=false; // si el usuario lo edita a mano, dejamos de autocalcular
+
+  function actualizarAvaluo(){
+    if(!avaluoManual){
+      const v=parseNum(valorEl.value);
+      avaluoEl.value=avaluoEstimado(v);
+    }
+  }
+
+  function syncDesdeFin(){
+    const v=parseNum(valorEl.value); const pct=parseFloat(finRange.value);
+    finVal.textContent=fmtNum(pct)+"%";
+    const c=v*pct/100;
+    credEl.value=fmtNum(c); engEl.value=fmtNum(v-c);
+    actualizarAvaluo();
+  }
+  function syncDesdeCredito(){
+    const v=parseNum(valorEl.value); const c=parseNum(credEl.value);
+    const pct=v>0? c/v*100:0;
+    finRange.value=Math.min(90,Math.max(10,pct));
+    finVal.textContent=fmtNum(pct)+"%";
+    engEl.value=fmtNum(v-c);
+    document.getElementById("finHint").textContent = pct>90? "⚠ supera 90%" : "máx. 90%";
+  }
+  function syncDesdeValor(){ syncDesdeFin(); }
+
+  // si el usuario edita el avalúo manualmente, respetar su valor
+  avaluoEl.addEventListener("input",()=>{ avaluoManual=true; });
+
+  // ingreso: se autocalcula como mensualidad/0.30 al calcular; si el usuario lo edita, se respeta
+  window.__ingresoManual=false;
+  document.getElementById("ingreso").addEventListener("input",()=>{ window.__ingresoManual=true; });
+
+  finRange.addEventListener("input",syncDesdeFin);
+  credEl.addEventListener("input",syncDesdeCredito);
+  credEl.addEventListener("blur",()=>{credEl.value=fmtNum(parseNum(credEl.value))});
+  valorEl.addEventListener("input",syncDesdeValor);
+  valorEl.addEventListener("blur",()=>{valorEl.value=fmtNum(parseNum(valorEl.value));syncDesdeValor()});
+  ["ingreso"].forEach(id=>{const e=document.getElementById(id);e.addEventListener("blur",()=>{e.value=fmtNum(parseNum(e.value))})});
+
+  // tipo de tasa
+  document.querySelectorAll("#tipoTasa button").forEach(b=>{
+    b.addEventListener("click",()=>{
+      document.querySelectorAll("#tipoTasa button").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+      const crec = b.dataset.t==="creciente";
+      document.getElementById("tasaFijaWrap").style.display = crec?"none":"block";
+      document.getElementById("tasaCrecWrap").style.display = crec?"block":"none";
+    });
+  });
+
+  // avanzado
+  const advT=document.getElementById("advToggle"), advB=document.getElementById("advBody");
+  advT.addEventListener("click",()=>{advT.classList.toggle("open");advB.classList.toggle("open")});
+
+  // logo personalizado
+  document.getElementById("logoFile").addEventListener("change",e=>{
+    const file=e.target.files[0]; if(!file)return;
+    const r=new FileReader();
+    r.onload=ev=>{LOGO_DATA=ev.target.result;
+      document.getElementById("brandLogo").src=LOGO_DATA;
+      document.getElementById("footLogo").src=LOGO_DATA;};
+    r.readAsDataURL(file);
+  });
+
+  document.getElementById("calcBtn").addEventListener("click",ejecutar);
+  document.getElementById("pdfBtn").addEventListener("click",generarPDF);
+
+  syncDesdeFin();
+}
+document.addEventListener("DOMContentLoaded",attachUI);
+
+/* ============================================================
+   PWA — instalable como web app (manifest + service worker
+   generados al vuelo para mantener un único archivo)
+   ============================================================ */
+(function initPWA(){
+  // 1) Manifest dinámico vía Blob
+  try{
+    const manifest = {
+      name:"AGENTO · Simulador Hipotecario",
+      short_name:"AGENTO Hipotecas",
+      description:"Simula tu crédito hipotecario, calcula CAT y tabla de amortización.",
+      start_url:".",
+      display:"standalone",
+      orientation:"any",
+      background_color:"#f6f8fc",
+      theme_color:"#003C8A",
+      icons:[
+        {src:LOGO_DATA, sizes:"192x192", type:"image/jpeg", purpose:"any"},
+        {src:LOGO_DATA, sizes:"512x512", type:"image/jpeg", purpose:"any maskable"}
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)],{type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("link");
+    link.rel="manifest"; link.href=url;
+    document.head.appendChild(link);
+    // icono apple-touch
+    const apple = document.createElement("link");
+    apple.rel="apple-touch-icon"; apple.href=LOGO_DATA;
+    document.head.appendChild(apple);
+  }catch(e){ console.warn("Manifest no disponible:",e); }
+
+  // 2) Service worker (cache-first para uso offline) vía Blob
+  if("serviceWorker" in navigator){
+    const swCode = `
+      const CACHE="agento-hipo-v1";
+      self.addEventListener("install",e=>{self.skipWaiting();});
+      self.addEventListener("activate",e=>{e.waitUntil(self.clients.claim());});
+      self.addEventListener("fetch",e=>{
+        e.respondWith(
+          caches.open(CACHE).then(async cache=>{
+            const hit=await cache.match(e.request);
+            if(hit) return hit;
+            try{
+              const res=await fetch(e.request);
+              if(e.request.method==="GET" && res.ok && e.request.url.startsWith("http")){
+                cache.put(e.request,res.clone());
+              }
+              return res;
+            }catch(err){ return hit || Response.error(); }
+          })
+        );
+      });`;
+    try{
+      const swBlob = new Blob([swCode],{type:"text/javascript"});
+      const swUrl = URL.createObjectURL(swBlob);
+      navigator.serviceWorker.register(swUrl).catch(()=>{/* file:// no permite SW; ignorar */});
+    }catch(e){/* ignore */}
+  }
+
+  // 3) Prompt de instalación
+  let deferredPrompt=null;
+  const fab=document.getElementById("installFab");
+  window.addEventListener("beforeinstallprompt",ev=>{
+    ev.preventDefault(); deferredPrompt=ev;
+    if(fab) fab.classList.add("show");
+  });
+  if(fab){
+    fab.addEventListener("click",async ()=>{
+      if(!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt=null; fab.classList.remove("show");
+    });
+  }
+  window.addEventListener("appinstalled",()=>{ if(fab) fab.classList.remove("show"); });
+})();
+
+</script>
+</body>
+</html>
